@@ -1,0 +1,973 @@
+1.bfs 
+def bfs(graph, start):
+    """Perform Breadth-First Search (BFS) on a graph using a list as the queue."""
+    visited = set()
+    queue = [start]  # Using a list instead of deque
+    order = []
+
+    while queue:
+        node = queue.pop(0)  # Popping from the front of the list
+        if node not in visited:
+            visited.add(node)
+            order.append(node)
+            
+            # Append neighbors to the queue
+            for neighbor in graph.get(node, []):
+                if neighbor not in visited:
+                    queue.append(neighbor)
+
+    return order
+
+graph = {
+    'A': ['B', 'C'],
+    'B': ['A', 'D', 'E'],
+    'C': ['A', 'F'],
+    'D': ['B'],
+    'E': ['B', 'F'],
+    'F': ['C', 'E']
+}
+start_node = 'A'
+print("BFS Traversal Order:", bfs(graph, start_node))
+
+
+2.depth first search
+ef dfs(graph, start, visited=None):
+    """Perform Depth-First Search (DFS) on a graph using sets for neighbors."""
+    if visited is None:
+        visited = set()  # Initialize visited set if it's not provided
+
+    visited.add(start)  # Mark the current node as visited
+    print(start)  # Print the current node
+
+    # Recursively visit all unvisited neighbors
+    for next in graph[start] - visited:
+        dfs(graph, next, visited)  # Recursively call DFS for the unvisited neighbor
+
+    return visited  
+
+graph = {
+    'A': set(['B', 'C']),
+    'B': set(['A', 'D', 'E']),
+    'C': set(['D', 'F','G']),
+    'D': set(['B', 'E']),
+    'E': set(['B', 'F', 'I']),
+    'F': set(['E', 'C']),
+    'G': set(['C']),  # New node 'G'
+    'H': set(['D']),  # New node 'H'
+    'I': set(['E'])   # New node 'I'
+}
+
+dfs(graph, 'E')
+
+3. depth limit search
+def dls(graph, start, depth_limit, visited=None, depth=0):
+    """Perform Depth-Limited Search (DLS) on a graph with a specified depth limit."""
+    if visited is None:
+        visited = set()  # Initialize visited set if it's not provided
+
+    # If the depth limit is reached or exceeded, stop the search
+    if depth > depth_limit:
+        return visited
+
+    visited.add(start)  # Mark the current node as visited
+    print(f"{' ' * depth}{start}(Depth:{depth})")  # Indent and print the current node with its depth
+
+    
+    # Visit neighbors in the custom defined order
+    for next_node in graph[start] - visited:
+        
+            dls(graph, next_node, depth_limit, visited, depth + 1)  # Recursively call DLS for the unvisited neighbor
+
+    return visited  # Return the visited set to propagate it back
+
+# Define the graph with sets for adjacency lists
+graph = {
+    'A': set(['B', 'C']),
+    'B': set(['A', 'D', 'E']),
+    'C': set(['D', 'F', 'G']),
+    'D': set(['B', 'E']),
+    'E': set(['B', 'F', 'I']),
+    'F': set(['E', 'C']),
+    'G': set(['C']),  # New node 'G'
+    'H': set(['D']),  # New node 'H'
+    'I': set(['E'])   # New node 'I'
+}
+
+# Call Depth-Limited Search (DLS) starting from node 'E' with a depth limit of 3
+dls(graph, 'E', depth_limit=2)
+
+
+4.iteratitive depth limit search:
+def dls(graph, start, depth_limit, visited=None, depth=0):
+    if visited is None:
+        visited = set()
+    
+    # Check if the depth limit has been reached
+    if depth > depth_limit:
+        return visited
+    
+    # Mark the current node as visited
+    visited.add(start)
+    print(f"{'  ' * depth}{start} (Depth: {depth})")  # Print node with depth indentation
+
+    # Recurse for each neighbor if not visited and within depth limit
+    for next_node in graph[start] - visited:
+        dls(graph, next_node, depth_limit, visited, depth + 1)
+    
+    return visited
+
+def iddfs(graph, start, goal, max_depth):
+    for depth in range(max_depth + 1):
+        print(f"Searching with depth limit: {depth}")
+        visited = set()
+        result = dls(graph, start, depth, visited)
+        
+        if goal in visited:
+            print(f"Goal {goal} found at depth {depth}")
+            return visited
+    
+    print(f"Goal {goal} not found within depth limit {max_depth}")
+    return visited
+
+# Example graph
+graph = {
+    'A': set(['B', 'C']),
+    'B': set(['A', 'D', 'E']),
+    'C': set(['A', 'F', 'G']),
+    'D': set(['B', 'E']),
+    'E': set(['B', 'F', 'I']),
+    'F': set(['E', 'C']),
+    'G': set(['C']),
+    'H': set(['D']),
+    'I': set(['E'])
+}
+
+# Perform Iterative Deepening DFS from node 'E' with a goal 'G' and max depth of 3
+iddfs(graph, 'E', 'G', max_depth=3)
+
+5.uiform cost search
+import heapq
+
+def uniform_cost_search(graph, start, goal):
+    # Priority queue (min-heap), starting with the start node and a cost of 0
+    priority_queue = [(0, start)]  # Each element is a tuple (cost, node)
+    
+    # Dictionary to store the minimum cost to reach each node
+    costs = {start: 0}
+    
+    # Dictionary to store the parent of each node to reconstruct the path later
+    came_from = {start: None}
+    
+    while priority_queue:
+        # Pop the node with the least cost from the priority queue
+        current_cost, current_node = heapq.heappop(priority_queue)
+        
+        # If the goal is reached, reconstruct the path and return it
+        if current_node == goal:
+            path = []
+            while current_node:
+                path.append(current_node)
+                current_node = came_from[current_node]
+            return path[::-1], current_cost
+        
+        # Explore the neighbors of the current node
+        if current_cost > costs[current_node]:
+            continue
+        for neighbor, cost in graph[current_node].items():
+            new_cost = costs[current_node] + cost
+            
+            # If this path to the neighbor is cheaper, add it to the frontier
+            if neighbor not in costs or new_cost < costs[neighbor]:
+                costs[neighbor] = new_cost
+                came_from[neighbor] = current_node
+                heapq.heappush(priority_queue, (new_cost, neighbor))
+    
+    # If no path is found, return None
+    return None, float('inf')
+
+# Define a sample graph where nodes have edge costs
+# The graph is represented as an adjacency list with costs
+graph = {
+    'A': {'B': 1, 'C': 4},
+    'B': {'A': 1, 'D': 2, 'E': 5},
+    'C': {'A': 4, 'E': 1},
+    'D': {'B': 5, 'E': 3, 'F': 1},
+    'E': {'B': 5, 'C': 1, 'D': 3, 'F': 2},
+    'F': {'D': 1, 'E': 2}
+}
+
+# Run the UCS from 'A' to 'F'
+path, cost = uniform_cost_search(graph, 'A', 'F')
+
+# Display the result
+print(f"Path: {path}, Cost: {cost}")
+
+
+6. best first search:
+import heapq
+
+def best_first_search(graph, start, goal, heuristic):
+    # Priority queue initialized with the start node and its heuristic
+    priority_queue = []
+    heapq.heappush(priority_queue, (heuristic[start], start))
+    visited = set()
+    came_from = {start: None}
+
+    while priority_queue:
+        current_priority, current_node = heapq.heappop(priority_queue)
+
+        if current_node == goal:
+            # Reconstruct the path from goal to start
+            path = []
+            while current_node:
+                path.append(current_node)
+                current_node = came_from[current_node]
+            return path[::-1]
+
+        visited.add(current_node)
+
+        # Explore neighbors of the current node
+        for neighbor in graph[current_node]:
+            if neighbor not in visited:
+                heapq.heappush(priority_queue, (heuristic[neighbor], neighbor))
+            if neighbor not in came_from:
+                came_from[neighbor] = current_node
+
+    return None
+
+# Graph structure with alphabetic nodes
+graph = {
+    'A': ['B', 'C'],
+    'B': ['A', 'D', 'E'],
+    'C': ['A', 'F', 'G'],
+    'D': ['B'],
+    'E': ['B', 'F'],
+    'F': ['C', 'E'],
+    'G': ['C']
+}
+
+# Heuristic values: estimated cost from each node to the goal ('G')
+heuristic = {
+    'A': 4,
+    'B': 3,
+    'C': 2,
+    'D': 3,
+    'E': 2,
+    'F': 1,
+    'G': 0  # Goal node
+}
+
+# Start and goal nodes
+start = 'A'
+goal = 'G'
+
+# Run the search from start to goal
+path = best_first_search(graph, start, goal, heuristic)
+
+# Display the result
+print(f"Path: {path}")
+
+
+
+
+
+
+graph = {
+    (0, 0): [(0, 1), (1, 0)],
+    (0, 1): [(0, 0), (1, 1)],
+    (1, 0): [(0, 0), (1, 1)],
+    (1, 1): [(0, 1), (1, 0)]
+}
+
+# Heuristic values: estimated cost from each node to the goal
+heuristic = {
+    (0, 0): 2,
+    (0, 1): 1,
+    (1, 0): 1,
+    (1, 1): 0  # Goal node
+}
+
+
+
+lab 7:beam search algorithm
+import heapq
+
+def beam_search(graph, start, goal, heuristic, beam_width):
+    # Priority queue initialized with the start node and its heuristic value
+    frontier = [(heuristic[start], start)]
+    visited = set([start])  # Set to track visited nodes
+    came_from = {start: None}  # Dictionary to track the predecessors of nodes
+
+    while frontier:
+        # Sort the frontier based on the heuristic value
+        frontier = sorted(frontier, key=lambda x: x[0])
+        
+        # Limit the number of nodes in the frontier based on the beam width
+        frontier = frontier[:beam_width]
+        
+        next_frontier = []
+
+        # Explore each node in the frontier
+        for _, current_node in frontier:
+            if current_node == goal:
+                # Reconstruct the path if the goal is reached
+                path = []
+                while current_node is not None:
+                    path.append(current_node)
+                    current_node = came_from[current_node]
+                return path[::-1]
+
+            # Add the neighbors of the current node to the next frontier
+            for neighbor in graph[current_node]:
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    came_from[neighbor] = current_node  # Set the current node as the predecessor of the neighbor
+                    next_frontier.append((heuristic[neighbor], neighbor))
+        
+        # Update the frontier for the next iteration
+        frontier = next_frontier
+
+    return None  # Return None if no path is found
+
+# Graph structure with alphabetic nodes
+graph = {
+    'A': ['B', 'C'],
+    'B': ['A', 'D', 'E'],
+    'C': ['A', 'F', 'G'],
+    'D': ['B'],
+    'E': ['B', 'F'],
+    'F': ['C', 'E'],
+    'G': ['C']
+}
+
+# Heuristic values: estimated cost from each node to the goal ('G')
+heuristic = {
+    'A': 4,
+    'B': 3,
+    'C': 2,
+    'D': 3,
+    'E': 2,
+    'F': 1,
+    'G': 0  # Goal node
+}
+
+# Start and goal nodes
+start = 'A'
+goal = 'G'
+
+# Define the beam width
+beam_width = 2
+
+# Run the Beam Search from start to goal
+path = beam_search(graph, start, goal, heuristic, beam_width)
+
+# Display the result
+print(f"Path: {path}")
+
+lab 8: hill climbe algorithm
+def hill_climbing(graph, start, goal, heuristic):
+    # Initialize the current node and its cost (heuristic value)
+    current_node = start
+    current_cost = heuristic[current_node]
+    path = [current_node]
+
+    while current_node != goal:
+        # Get the neighbors of the current node
+        neighbors = graph.get(current_node, [])
+        
+        # If there are no neighbors, stop the search
+        if not neighbors:
+            break
+        
+        # Sort the neighbors based on their heuristic value in descending order
+        neighbors.sort(key=lambda x: heuristic[x[0]])
+        
+        # Get the best neighbor with the highest heuristic value
+        next_node, cost = neighbors[0]
+        next_cost = heuristic[next_node]
+        
+        # If the next node does not improve the heuristic, stop (stuck at a local maximum)
+        if next_cost >= current_cost:
+            break
+        
+        # Move to the next node
+        current_node = next_node
+        current_cost = next_cost
+        path.append(current_node)
+
+    # If the goal is reached, return the path, otherwise return None
+    return path if current_node == goal else None
+
+# Define the graph with nodes, neighbors, and edge costs
+graph = {
+    'A': [('B', 1), ('C', 4)],
+    'B': [('D', 2), ('E', 5)],
+    'C': [('F', 3)],
+    'D': [('G', 6)],
+    'E': [('G', 2)],
+    'F': [('G', 1)],
+    'G': []
+}
+
+# Define the heuristic values for each node
+heuristic = {
+    'A': 7,
+    'B': 6,
+    'C': 4,
+    'D': 3,
+    'E': 2,
+    'F': 1,
+    'G': 0
+}
+
+# Start node and goal node
+start = 'A'
+goal = 'G'
+
+# Run the hill climbing algorithm
+path = hill_climbing(graph, start, goal, heuristic)
+
+# Display the result
+if path:
+    print(f"Path found: {' -> '.join(path)}")
+else:
+    print("No path found or stuck in local optimum")
+
+
+
+
+lab 9: A* algorithm
+import heapq
+
+def a_star(graph, start, goal, heuristic):
+    # Priority queue to store nodes with their f(n) values (f(n) = g(n) + h(n))
+    open_list = []
+    heapq.heappush(open_list, (0 + heuristic[start], start))
+    
+    # Dictionaries to store the actual cost to reach a node and the parent of each node
+    g_costs = {start: 0}  # g(n) is the cost from the start node to the current node
+    came_from = {start: None}  # To reconstruct the path
+    
+    while open_list:
+        # Pop the node with the lowest f(n) from the priority queue
+        _, current_node = heapq.heappop(open_list)
+        
+        # If the goal is reached, reconstruct the path and return it
+        if current_node == goal:
+            path = []
+            while current_node:
+                path.append(current_node)
+                current_node = came_from[current_node]
+            return path[::-1]  # Reverse the path to get the correct order
+        
+        # Explore the neighbors of the current node
+        for neighbor, cost in graph[current_node]:
+            # Calculate g(n) for the neighbor
+            tentative_g_cost = g_costs[current_node] + cost
+            
+            # If this neighbor has not been visited or a shorter path is found
+            if neighbor not in g_costs or tentative_g_cost < g_costs[neighbor]:
+                g_costs[neighbor] = tentative_g_cost
+                f_cost = tentative_g_cost + heuristic[neighbor]
+                came_from[neighbor] = current_node
+                heapq.heappush(open_list, (f_cost, neighbor))  # Add the neighbor to the open list
+
+    # If the goal is not reached, return None
+    return None
+
+# Define the graph with nodes, neighbors, and edge costs
+graph = {
+    'A': [('B', 1), ('C', 4)],
+    'B': [('D', 2), ('E', 5)],
+    'C': [('F', 3)],
+    'D': [('G', 6)],
+    'E': [('G', 2)],
+    'F': [('G', 1)],
+    'G': []
+}
+
+# Define the heuristic values for each node
+heuristic = {
+    'A': 7,  # Heuristic value for node A
+    'B': 6,  # Heuristic value for node B
+    'C': 4,  # Heuristic value for node C
+    'D': 3,  # Heuristic value for node D
+    'E': 2,  # Heuristic value for node E
+    'F': 1,  # Heuristic value for node F
+    'G': 0   # Heuristic value for node G (goal node)
+}
+
+# Start node and goal node
+start = 'A'
+goal = 'G'
+
+# Run the A* algorithm
+path = a_star(graph, start, goal, heuristic)
+
+# Display the result
+if path:
+    print(f"Path found: {' -> '.join(path)}")
+else:
+    print("No path found")
+
+
+lab 10: 
+# Rule-based system
+def rule_based_system(facts):
+    rules = [
+        ("if it is raining, then take an umbrella", lambda facts: "raining" in facts),
+        ("if it is cold, then wear a coat", lambda facts: "cold" in facts),
+        ("if you are going outside and it is raining, then take an umbrella", lambda facts: "going_outside" in facts and "raining" in facts),
+    ]
+    
+    actions = []
+    for rule, condition in rules:
+        if condition(facts):
+            actions.append(rule)
+    
+    return actions
+
+# Semantic network and Animal class
+class Animal:
+    def __init__(self, name, species, sound):
+        self.name = name
+        self.species = species
+        self.sound = sound
+        self.network = {}
+    
+    def add_relationship(self, parent, child):
+        if parent not in self.network:
+            self.network[parent] = []
+        self.network[parent].append(child)
+    
+    def display(self):
+        for parent, children in self.network.items():
+            for child in children:
+                print(f"{parent} → {child}")
+    
+    def make_sound(self):
+        return self.sound
+
+class SemanticNetwork:
+    def __init__(self):
+        self.network = {}
+    
+    def add_relationship(self, parent, child):
+        if parent not in self.network:
+            self.network[parent] = []
+        self.network[parent].append(child)
+    
+    def display(self):
+        for parent, children in self.network.items():
+            for child in children:
+                print(f"{parent} → {child}")
+
+if __name__ == "__main__":
+    # Rule-based system test
+    facts = ["raining", "going_outside"]
+    actions = rule_based_system(facts)
+    print("Rule-based Actions:", actions)
+
+    # Adding a predicate logic action print
+    if "if it is raining, then take an umbrella" in actions:
+        print("Predicate Logic Action: Take an umbrella")
+    elif "if it is cold, then wear a coat" in actions:
+        print("Predicate Logic Action: Wear a coat")
+    elif "if you are going outside and it is raining, then take an umbrella" in actions:
+        print("Predicate Logic Action: Take an umbrella")
+    else:
+        print("Predicate Logic Action: No action needed")
+
+    # Semantic network implementation
+    print("\nSemantic Network Relationships:")
+    dog = Animal("Buddy", "dog", "woof")
+    cat = Animal("Whiskers", "cat", "meow")
+    
+    print(f"{dog.name} says: {dog.make_sound()}")
+    print(f"{cat.name} says: {cat.make_sound()}")
+    
+    # Semantic network relationships
+    semantic_net = SemanticNetwork()
+    semantic_net.add_relationship("Animal", "Dog")
+    semantic_net.add_relationship("Animal", "Cat")
+    semantic_net.add_relationship("Dog", "Barks")
+    semantic_net.add_relationship("Cat", "Meows")
+    
+    print("\nSemantic Network:")
+    semantic_net.display()
+
+
+
+
+lab 11 naive bayers:
+
+# Importing necessary libraries
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score, classification_report
+from sklearn import datasets
+import matplotlib.pyplot as plt
+
+# Loading the Iris dataset
+iris = datasets.load_iris()
+
+# Plotting the first two features of the Iris dataset
+_, ax = plt.subplots()
+scatter = ax.scatter(iris.data[:, 0], iris.data[:, 1], c=iris.target)
+ax.set(xlabel=iris.feature_names[0], ylabel=iris.feature_names[1])
+
+# Adding a legend to the scatter plot
+_ = ax.legend(
+    scatter.legend_elements()[0], iris.target_names, loc="lower right", title="Classes"
+)
+
+# Features and labels
+X = iris.data  # Features
+y = iris.target  # Labels
+
+# Splitting the dataset into training and testing sets (70% train, 30% test)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Creating a Naive Bayes classifier (GaussianNB for continuous data)
+nb_classifier = GaussianNB()
+
+# Training the model on the training data
+nb_classifier.fit(X_train, y_train)
+
+# Making predictions on the test data
+y_pred = nb_classifier.predict(X_test)
+
+# Evaluating the model
+accuracy = accuracy_score(y_test, y_pred)
+
+# Displaying results
+print(f'Accuracy: {accuracy:.2f}')
+print('Classification Report:')
+print(classification_report(y_test, y_pred))
+
+
+
+
+
+
+lab 12: neural network or and gate:
+import numpy as np
+
+# Sigmoid activation function
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+# Derivative of sigmoid function
+def sigmoid_derivative(x):
+    return x * (1 - x)
+
+# Neural network class
+class NeuralNetwork:
+    def __init__(self):
+        # Initialize weights and bias randomly
+        self.weights = np.random.rand(2, 1)  # Two inputs (AND/OR gate)
+        self.bias = np.random.rand(1)
+        self.learning_rate = 0.1
+
+    # Train the network with inputs and expected output
+    def train(self, inputs, expected_output, epochs):
+        for epoch in range(epochs):
+            total_error = 0
+            for x, y in zip(inputs, expected_output):
+                # Feed forward
+                weighted_sum = np.dot(x, self.weights) + self.bias
+                activated_output = sigmoid(weighted_sum)
+
+                # Calculate the error
+                error = y - activated_output
+                total_error += error ** 2  # Sum of squared errors for monitoring
+
+                # Backpropagation
+                adjustments = error * sigmoid_derivative(activated_output)
+
+                # Update weights and bias
+                self.weights += self.learning_rate * np.dot(x.reshape(-1, 1), adjustments.reshape(1, -1))
+                self.bias += self.learning_rate * adjustments
+
+            if epoch % 1000 == 0:  # Print error every 1000 epochs
+                print(f"Epoch {epoch}/{epochs}, Total Error: {total_error}")
+
+    # Predict the output for a given input
+    def predict(self, input_data):
+        weighted_sum = np.dot(input_data, self.weights) + self.bias
+        activated_output = sigmoid(weighted_sum)
+        return np.round(activated_output)  # Return 0 or 1 (binary output)
+
+
+# Define input and output for AND gate
+inputs = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+and_outputs = np.array([[0], [0], [0], [1]])
+
+# Define input and output for OR gate
+or_outputs = np.array([[0], [1], [1], [1]])
+
+# Initialize the neural network
+and_gate_nn = NeuralNetwork()
+or_gate_nn = NeuralNetwork()
+
+# Train the network for AND gate
+print("Training Neural Network for AND gate...")
+and_gate_nn.train(inputs, and_outputs, 10000)
+
+# Train the network for OR gate
+print("Training Neural Network for OR gate...")
+or_gate_nn.train(inputs, or_outputs, 10000)
+
+# Testing AND gate
+print("\nAND Gate Results:")
+for input_data in inputs:
+    print(f"Input: {input_data} Output: {and_gate_nn.predict(input_data)}")
+
+# Testing OR gate
+print("\nOR Gate Results:")
+for input_data in inputs:
+    print(f"Input: {input_data} Output: {or_gate_nn.predict(input_data)}")
+
+
+
+
+
+
+lab 13: Back propagation
+import numpy as np
+
+# Sigmoid activation function and its derivative
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+def sigmoid_derivative(x):
+    return x * (1 - x)
+
+# NeuralNetwork class
+class NeuralNetwork:
+    def __init__(self, input_size, hidden_size, output_size):
+        # Initialize weights and biases
+        self.weights_input_hidden = np.random.rand(input_size, hidden_size) - 0.5
+        self.weights_hidden_output = np.random.rand(hidden_size, output_size) - 0.5
+        self.learning_rate = 0.5
+
+    def forward(self, x):
+        # Forward propagation
+        self.input = x
+        self.hidden = sigmoid(np.dot(self.input, self.weights_input_hidden))
+        self.output = sigmoid(np.dot(self.hidden, self.weights_hidden_output))
+        return self.output
+
+    def backward(self, x, y, output):
+        # Backpropagation
+        output_error = y - output
+        output_delta = output_error * sigmoid_derivative(output)
+
+        hidden_error = np.dot(output_delta, self.weights_hidden_output.T)
+        hidden_delta = hidden_error * sigmoid_derivative(self.hidden)
+
+        # Update weights
+        self.weights_hidden_output += np.dot(self.hidden.T, output_delta) * self.learning_rate
+        self.weights_input_hidden += np.dot(x.T, hidden_delta) * self.learning_rate
+
+    def train(self, x, y, iterations):
+        for i in range(iterations):
+            output = self.forward(x)
+            self.backward(x, y, output)
+            if i % 1000 == 0:
+                loss = np.mean(np.square(y - output))
+                print(f"Iteration {i}, Loss: {loss}")
+
+# Example usage
+if __name__ == "__main__":
+    # XOR dataset
+    x = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+    y = np.array([[0], [1], [1], [0]])
+
+    # Initialize and train the network
+    nn = NeuralNetwork(input_size=2, hidden_size=2, output_size=1)
+    nn.train(x, y, iterations=10000)
+
+    # Test the network
+    print("\nAfter training:")
+    print(nn.forward(x))
+
+
+lab 14:weather expert system:
+class WeatherExpertSystem:
+    def __init__(self, temperature, humidity, is_cloudy, is_sunny):
+        self.temperature = temperature
+        self.humidity = humidity
+        self.is_cloudy = is_cloudy
+        self.is_sunny = is_sunny
+
+    def predict_weather(self):
+        if self.temperature > 30 and self.humidity < 40:
+            return "Prediction: Hot and dry."
+        elif self.temperature < 10:
+            return "Prediction: Cold weather."
+        elif self.is_cloudy and self.humidity > 60:
+            return "Prediction: Rain likely."
+        elif 20 <= self.temperature <= 30 and self.humidity < 50:
+            return "Prediction: Pleasant weather."
+        elif self.is_sunny:
+            return "Prediction: Sunny weather."
+        else:
+            return "Prediction: Uncertain conditions."
+
+# Input section
+temperature = float(input("Enter the temperature: "))
+humidity = float(input("Enter the humidity: "))
+is_cloudy = input("Is it cloudy? (yes/no): ").lower() == "yes"
+is_sunny = input("Is it sunny? (yes/no): ").lower() == "yes"
+
+# Prediction
+weather = WeatherExpertSystem(temperature, humidity, is_cloudy, is_sunny)
+prediction = weather.predict_weather()
+print(prediction)
+
+
+
+
+
+
+
+lab 15:N queen problem
+def is_safe(board, row, col, N):
+    # Check left side in the current row
+    for i in range(col):
+        if board[row][i] == 1:
+            return False
+
+    # Check upper-left diagonal
+    for i, j in zip(range(row, -1, -1), range(col, -1, -1)):
+        if board[i][j] == 1:
+            return False
+
+    # Check lower-left diagonal
+    for i, j in zip(range(row, N), range(col, -1, -1)):
+        if board[i][j] == 1:
+            return False
+
+    return True
+
+def solve_n_queens_util(board, col, N):
+    # If all queens are placed, return True
+    if col >= N:
+        return True
+
+    # Try placing the queen in all rows of the current column
+    for i in range(N):
+        if is_safe(board, i, col, N):
+            board[i][col] = 1  # Place the queen
+            
+            # Recurse for the next column
+            if solve_n_queens_util(board, col + 1, N):
+                return True
+
+            board[i][col] = 0  # Backtrack
+
+    return False
+
+def solve_n_queens(N):
+    # Initialize the board
+    board = [[0 for _ in range(N)] for _ in range(N)]
+    
+    if not solve_n_queens_util(board, 0, N):
+        print("Solution does not exist.")
+        return
+
+    # Print the solution
+    for row in board:
+        print(" ".join("Q" if x == 1 else "." for x in row))
+    print()
+
+# Input from the user
+N = int(input("Enter the value of N for the N-Queen problem: "))
+solve_n_queens(N)
+
+
+
+
+
+def is_safe(board, row, col, N):
+    # Check left side in the current row
+    for i in range(col):
+        if board[row][i] == 1:
+            return False
+
+    # Check upper-left diagonal
+    for i, j in zip(range(row, -1, -1), range(col, -1, -1)):
+        if board[i][j] == 1:
+            return False
+
+    # Check lower-left diagonal
+    for i, j in zip(range(row, N), range(col, -1, -1)):
+        if board[i][j] == 1:
+            return False
+
+    return True
+
+def solve_n_queens_util(board, col, N):
+    # If all queens are placed, return True
+    if col >= N:
+        return True
+
+    # Try placing the queen in all rows of the current column
+    for i in range(N):
+        if is_safe(board, i, col, N):
+            board[i][col] = 1  # Place the queen
+            
+            # Recurse for the next column
+            if solve_n_queens_util(board, col + 1, N):
+                return True
+
+            board[i][col] = 0  # Backtrack
+
+    return False
+
+def solve_n_queens(N):
+    # Initialize the board
+    board = [[0 for _ in range(N)] for _ in range(N)]
+    
+    if not solve_n_queens_util(board, 0, N):
+        print("Solution does not exist.")
+        return
+
+    # Print the solution
+    for row in board:
+        print(" ".join("Q" if x == 1 else "." for x in row))
+    print()
+
+# Input from the user
+N = int(input("Enter the value of N for the N-Queen problem: "))
+solve_n_queens(N)
+
+
+
+lab 16:minmax
+
+import math
+
+def minmax(depth, nodeindex, isMax, scores, h):
+    if depth == h:
+        return scores[nodeindex]
+    
+    if isMax:
+        return max(
+            minmax(depth + 1, nodeindex * 2, False, scores, h),
+            minmax(depth + 1, nodeindex * 2 + 1, False, scores, h)
+        )
+    else:
+        return min(
+            minmax(depth + 1, nodeindex * 2, True, scores, h),
+            minmax(depth + 1, nodeindex * 2 + 1, True, scores, h)
+        )
+
+if __name__ == "__main__":
+    scores = [3, 5, 2, 9, 12, 5, 23, 2, 3]
+    h = int(math.log2(len(scores)))  # Using log2 for binary trees
+    result = minmax(0, 0, True, scores, h)
+    print(f"The optimal value is: {result}")
+
